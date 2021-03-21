@@ -108,10 +108,12 @@ class Snake(object):
 
 		self.body.insert(0, self.board[newj][newi])
 
-		if self.body[0].type != "fruit":
-			self.body.pop().type = "background"
-		else:
+		if self.body[0].type == "fruit":
 			self.fruit.spawn()
+		elif self.body[0].type == "snake":
+			return False
+		else:
+			self.body.pop().type = "background"
 
 		self.body[0].type = "snake"
 
