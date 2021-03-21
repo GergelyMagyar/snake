@@ -27,7 +27,8 @@ win = pygame.display.set_mode((screen_width, screen_height))
 
 
 class Rectangle(object):
-	def __init__(self, x, y, i, j, dimensions, win):
+	def __init__(self, x, y, i, j, dimensions, win, rectangle_type="background"):
+		self.type = rectangle_type
 		self.x = x
 		self.y = y
 		self.i = i
@@ -53,7 +54,7 @@ class Grid(object):
 			row.clear()
 			x = 0
 			for i in range(self.screen_dim.ccw):
-				row.append(Rectangle(x,y,i,j,self.screen_dim,self.win))
+				row.append(Rectangle(x,y,i,j,self.screen_dim,self.win,"background"))
 				x += self.screen_dim.cs
 			self.board.append(row[:])
 			y += self.screen_dim.cs
@@ -70,18 +71,18 @@ class Grid(object):
 
 
 class Snake(object):
-	def __init__(self, spawn_i, spawn_j, dimensions, win, board, color=(124,252,0)):
+	def __init__(self, spawn_i, spawn_j, dimensions, win, board, fruit, color=(124,252,0)):
 		self.body = []
 		self.body.insert(0, board[spawn_j][spawn_i])
 		self.length = 1
 		self.screen_dim = dimensions
 		self.win = win
 		self.board = board
+		self.fruit = fruit
 		self.color = color
-		self.direction = random.randint(0,4) # 0 - up, 1 - down, 2 - left, 3 - right
+		self.direction = random.randint(0,3) # 0 - up, 1 - down, 2 - left, 3 - right
 
 	def move(self):
-		
 		newi = self.body[0].i
 		newj = self.body[0].j
 		if self.direction == 0: 	# UP
@@ -103,32 +104,59 @@ class Snake(object):
 
 		self.body.insert(0, self.board[newj][newi])
 
-		# if no fruit
-		self.body.pop()
+		if self.body[0].type != "fruit":
+			self.body.pop().type = "background"
+		else:
+			self.fruit.spawn()
+
+		self.body[0].type = "snake"
 
 		return True
-
 
 	def draw(self):
 		for rect in self.body:
 			rect.draw(self.color)
 
 
-def redraw(dimensions, win, grid, snake):
+class Fruit(object):
+	def __init__(self, dimensions, win, board, color=(255,0,0)):
+		self.dimensions = dimensions
+		self.win = win
+		self.board = board
+		self.color = color
+		self.rect = None
+		self.spawn()
+
+	def spawn(self):
+		random_i = random.randint(0, self.dimensions.ccw-1)
+		random_j = random.randint(0, self.dimensions.cch-1)
+
+		while self.board[random_j][random_i].type != "background":
+			random_i = random.randint(0, self.dimensions.ccw-1)
+			random_j = random.randint(0, self.dimensions.cch-1)
+
+		self.rect = self.board[random_j][random_i]
+		self.rect.type = "fruit"
+
+	def draw(self):
+		if self.rect != None:
+			self.rect.draw(self.color)
+
+
+def redraw(dimensions, win, grid, fruit, snake):
 	#win.fill((0,0,0))
 	grid.draw()
+	fruit.draw()
 	snake.draw()
 	pygame.display.update()
-
-
-
 
 
 def solo_game(dimensions, win, clock):
 	pygame.mouse.set_visible(False)
 	grid = Grid(dimensions, win, (0,0,0))
-	snake = Snake(10, 10, dimensions, win, grid.board, (124,252,0))
-	redraw(dimensions, win, grid, snake)
+	fruit = Fruit(dimensions, win, grid.board, color=(255,0,0))
+	snake = Snake(10, 10, dimensions, win, grid.board, fruit, (124,252,0))
+	redraw(dimensions, win, grid, fruit, snake)
 
 	run = True
 	while(run):
@@ -140,17 +168,17 @@ def solo_game(dimensions, win, clock):
 				run = False
 
 		keys = pygame.key.get_pressed()
-		if keys[pygame.K_w] or keys[pygame.K_UP]:
+		if (keys[pygame.K_w] or keys[pygame.K_UP]) and snake.direction != 1:
 			snake.direction = 0
-		if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+		if (keys[pygame.K_s] or keys[pygame.K_DOWN]) and snake.direction != 0:
 			snake.direction = 1
-		if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+		if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and snake.direction != 3:
 			snake.direction = 2
-		if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+		if (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and snake.direction != 2:
 			snake.direction = 3
 
 		run = snake.move()
-		redraw(dimensions, win, grid, snake)
+		redraw(dimensions, win, grid, fruit, snake)
 
 
 solo_game(dimensions, win, clock)
