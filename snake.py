@@ -3,7 +3,9 @@ import random
 import time
 import collections
 from collections import namedtuple
+from tkinter import *
 
+pygame.init()
 
 screen_width = 800
 screen_height = 600
@@ -16,7 +18,9 @@ cell_count_h = screen_height//cell_size
 Dimensions = namedtuple("Dimensions", "sw sh cs ccw cch")
 dimensions = Dimensions(screen_width, screen_height, cell_size, cell_count_w, cell_count_h)
 
-pygame.init()
+bigfont = pygame.font.SysFont('Comic Sans MS', 80)
+smallfont = pygame.font.SysFont('Comic Sans MS', 30)
+fonts = (bigfont, smallfont)
 
 random.seed(time.localtime())
 clock = pygame.time.Clock()
@@ -151,7 +155,7 @@ def redraw(dimensions, win, grid, fruit, snake):
 	pygame.display.update()
 
 
-def solo_game(dimensions, win, clock):
+def solo_game(dimensions, win, clock, fonts):
 	pygame.mouse.set_visible(False)
 	grid = Grid(dimensions, win, (0,0,0))
 	fruit = Fruit(dimensions, win, grid.board, color=(255,0,0))
@@ -181,4 +185,61 @@ def solo_game(dimensions, win, clock):
 		redraw(dimensions, win, grid, fruit, snake)
 
 
-solo_game(dimensions, win, clock)
+def ai_game(dimensions, win, clock, fonts):
+	pass
+
+
+def center_text(w,h, tw, th):
+	x = w//2-tw//2
+	y = h//2 - th//2
+	return x,y
+
+
+def draw_menu(dimensions, win, fonts):
+	win.fill((0,0,0))
+
+	title = fonts[0].render("Snake", True, (255,255,255))
+	x, y = center_text(dimensions.sw, dimensions.sh, title.get_width(), title.get_height())
+	win.blit(title, (x,y))
+
+	solo = fonts[1].render("<- Solo Game", True, (255,255,255))
+	x, y = center_text(dimensions.sw, dimensions.sh, solo.get_width(), solo.get_height())
+	x -= dimensions.sw//3
+	win.blit(solo, (x,y))
+
+	ai = fonts[1].render("AI Game ->", True, (255,255,255))
+	x, y = center_text(dimensions.sw, dimensions.sh, ai.get_width(), ai.get_height())
+	x += dimensions.sw//3
+	win.blit(ai, (x,y))
+
+	exit = fonts[1].render("v exit v", True, (255,255,255))
+	x, y = center_text(dimensions.sw, dimensions.sh, exit.get_width(), exit.get_height())
+	y += dimensions.sh//3 + exit.get_height()
+	win.blit(exit, (x,y))
+
+	pygame.display.update()
+
+
+def menu(dimensions, win, clock, fonts):
+	run = True
+	while(run):
+		draw_menu(dimensions, win, fonts)
+
+		clock.tick(20)
+		pygame.time.delay(100)
+		
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				run = False
+
+		keys = pygame.key.get_pressed()
+		if keys[pygame.K_LEFT]:
+			solo_game(dimensions, win, clock, fonts)
+		if keys[pygame.K_RIGHT]:
+			ai_game(dimensions, win, clock, fonts)
+		if keys[pygame.K_DOWN]:
+			run = False
+
+
+
+menu(dimensions, win, clock, fonts)
